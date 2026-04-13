@@ -133,10 +133,18 @@ def posts_by_tag(
     if tag is None:
         raise HTTPException(status_code=404, detail="Tag not found.")
 
-    posts = tag.posts[skip : skip + limit]
+    total_q = db.query(Post).join(Post.tags).filter(Tag.name == name)
+    total = total_q.count()
+    posts = (
+        total_q.options(joinedload(Post.tags))
+        .order_by(Post.published_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return {
         "tag": name,
-        "total": len(tag.posts),
+        "total": total,
         "skip": skip,
         "limit": limit,
         "results": [_post_summary(p) for p in posts],

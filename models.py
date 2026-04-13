@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import relationship
@@ -38,7 +38,7 @@ class Post(Base):
     # Plain-text version for full-text search
     body_text = Column(Text)
     comment_count = Column(Integer, default=0)
-    scraped_at = Column(DateTime, default=datetime.utcnow)
+    scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     tags = relationship("Tag", secondary=post_tags, back_populates="posts")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")

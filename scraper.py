@@ -15,7 +15,7 @@ the implementation straightforward and compatible with FastAPI background tasks.
 import logging
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
@@ -48,10 +48,7 @@ _POST_URL_RE = re.compile(r"/(\d+)\.html$")
 _COMMENT_ID_RE = re.compile(r"cmt(\d+)")
 # Date strings on Dreamwidth: "April 13th, 2024" or "2024-04-13 12:00"
 _DW_DATE_FORMATS = [
-    "%B %dst, %Y",
-    "%B %dnd, %Y",
-    "%B %drd, %Y",
-    "%B %dth, %Y",
+    "%B %d, %Y",
     "%Y-%m-%d %H:%M",
     "%Y-%m-%dT%H:%M:%S",
 ]
@@ -285,7 +282,7 @@ def _upsert_post(db: Session, data: dict) -> Post:
     post.body_html = data["body_html"]
     post.body_text = data["body_text"]
     post.comment_count = data["comment_count"]
-    post.scraped_at = datetime.utcnow()
+    post.scraped_at = datetime.now(timezone.utc)
 
     # Tags
     tag_objs: list[Tag] = []
@@ -359,7 +356,7 @@ def run_scrape(db: Session, force: bool = False) -> ScrapeProgress:
 
     scrape_progress = ScrapeProgress()
     scrape_progress.running = True
-    scrape_progress.started_at = datetime.utcnow()
+    scrape_progress.started_at = datetime.now(timezone.utc)
 
     try:
         with httpx.Client() as client:
@@ -412,7 +409,7 @@ def run_scrape(db: Session, force: bool = False) -> ScrapeProgress:
         logger.exception("Scrape failed: %s", exc)
     finally:
         scrape_progress.running = False
-        scrape_progress.finished_at = datetime.utcnow()
+        scrape_progress.finished_at = datetime.now(timezone.utc)
         scrape_progress.current_url = ""
 
     return scrape_progress
